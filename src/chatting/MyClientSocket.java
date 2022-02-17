@@ -4,6 +4,8 @@ import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 import java.io.BufferedReader;
@@ -81,6 +83,18 @@ public class MyClientSocket extends JFrame {
 		bottom.setBackground(Color.orange);
 		bottom.setLayout(new FlowLayout());
 		bottom.setPreferredSize(new Dimension(400, 40));
+
+		send.addActionListener(new ActionListener() {
+
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				if (e.getSource() == send) {
+					msg = textBox.getText();
+					textBox.setText("");
+					write();
+				}
+			}
+		});
 
 	}
 
