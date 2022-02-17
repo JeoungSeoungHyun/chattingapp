@@ -19,11 +19,12 @@ import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
+import javax.swing.JScrollPane;
 import javax.swing.JTextField;
 
 /**
  * 
- * @author 정성현 목적 : 프레임 생성
+ * @author 정성현 목적 : 프로토콜 구분 버튼 추가
  *
  */
 
@@ -37,6 +38,13 @@ public class MyClientSocket extends JFrame {
 	private JButton send;
 	private String msg;
 	private JPanel msgBox;
+	private JScrollPane textBoxScroll;
+
+	// 프로토콜 구분 위한 변수
+	private JButton all;
+	private JButton chat;
+	private boolean isAll = true;
+	private boolean isChat = false;
 
 	// 소켓을 위한 변수
 	private Socket socket;
@@ -52,6 +60,7 @@ public class MyClientSocket extends JFrame {
 		initObject();
 		initSetting();
 		addObject();
+		btn();
 		initListener();
 		connect();
 		setVisible(true);
@@ -65,6 +74,9 @@ public class MyClientSocket extends JFrame {
 		textBox = new JTextField(30);
 		send = new JButton("전송");
 		msgBox = new JPanel();
+		all = new JButton("ALL");
+		chat = new JButton("CHAT");
+		textBoxScroll = new JScrollPane(textBox);
 
 	}
 
@@ -75,26 +87,14 @@ public class MyClientSocket extends JFrame {
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
 		top.setBackground(Color.yellow);
-		top.setPreferredSize(new Dimension(400, 30));
+		top.setLayout(new FlowLayout());
+		top.setPreferredSize(new Dimension(400, 40));
 
 		center.setBackground(Color.pink);
 		center.setLayout(new BoxLayout(center, BoxLayout.Y_AXIS));
 
-		bottom.setBackground(Color.orange);
-		bottom.setLayout(new FlowLayout());
-		bottom.setPreferredSize(new Dimension(400, 40));
-
-		send.addActionListener(new ActionListener() {
-
-			@Override
-			public void actionPerformed(ActionEvent e) {
-				if (e.getSource() == send) {
-					msg = textBox.getText();
-					textBox.setText("");
-					write();
-				}
-			}
-		});
+		textBoxScroll.setBackground(Color.orange);
+		textBoxScroll.setPreferredSize(new Dimension(400, 40));
 
 	}
 
@@ -102,10 +102,11 @@ public class MyClientSocket extends JFrame {
 
 		add(top, BorderLayout.NORTH);
 		add(center, BorderLayout.CENTER);
-		add(bottom, BorderLayout.SOUTH);
+		add(textBoxScroll, BorderLayout.SOUTH);
 
-		bottom.add(textBox);
-		bottom.add(send);
+		top.add(all);
+		top.add(chat);
+		top.add(send);
 
 	}
 
@@ -117,7 +118,7 @@ public class MyClientSocket extends JFrame {
 				if (e.getKeyCode() == KeyEvent.VK_ENTER) {
 					msg = textBox.getText();
 					textBox.setText("");
-					write();
+					protocol();
 
 				}
 			}
@@ -135,10 +136,8 @@ public class MyClientSocket extends JFrame {
 			reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
 			writer = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()));
 
-			if (socket != null) {
-				read();
+			read();
 
-			}
 		} catch (Exception e) {
 			System.out.println("연결실패 : " + e.getMessage());
 		}
@@ -173,7 +172,7 @@ public class MyClientSocket extends JFrame {
 
 	}
 
-	private void write() {
+	private void writeAll() {
 		try {
 			if (!isId) {
 				userName = msg;
@@ -186,16 +185,86 @@ public class MyClientSocket extends JFrame {
 				isId = true;
 			} else if (isId) {
 
-				writer.write(msg + "\n");
+				writer.write("ALL:" + msg + "\n");
 				writer.flush();
 				center.add(msgBox.add(new JLabel(msg)));
 				center.revalidate();
 				center.repaint();
 			}
-		} catch (
-
-		Exception e) {
+		} catch (Exception e) {
 			System.out.println("연결이 없습니다.");
+		}
+	}
+
+	private void writeChat() {
+		try {
+			if (!isId) {
+				userName = msg;
+				writer.write(userName + "\n");
+				writer.flush();
+				center.add(msgBox.add(new JLabel("ID가 전송되었습니다.")));
+				center.add(msgBox.add(new JLabel("ID : " + userName)));
+				center.revalidate();
+				center.repaint();
+				isId = true;
+			} else if (isId) {
+
+				writer.write("CHAT:" + msg + "\n");
+				writer.flush();
+				center.add(msgBox.add(new JLabel(msg.substring(5))));
+				center.revalidate();
+				center.repaint();
+			}
+		} catch (Exception e) {
+			System.out.println("연결이 없습니다.");
+		}
+	}
+
+	// 버튼 클릭시 이벤트 설정
+	private void btn() {
+
+		send.addActionListener(new ActionListener() {
+
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				if (e.getSource() == send) {
+					msg = textBox.getText();
+					textBox.setText("");
+					protocol();
+				}
+			}
+		});
+
+		all.addActionListener(new ActionListener() {
+
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				if (e.getSource() == all) {
+					isAll = true;
+					isChat = false;
+
+				}
+			}
+		});
+
+		chat.addActionListener(new ActionListener() {
+
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				if (e.getSource() == chat) {
+					msg = textBox.getText();
+					isAll = false;
+					isChat = true;
+				}
+			}
+		});
+	}
+
+	private void protocol() {
+		if (isAll) {
+			writeAll();
+		} else if (isChat) {
+			writeChat();
 		}
 	}
 
