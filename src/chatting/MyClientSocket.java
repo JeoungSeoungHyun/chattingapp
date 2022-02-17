@@ -24,7 +24,7 @@ import javax.swing.JTextField;
 
 /**
  * 
- * @author 정성현 목적 : 프로토콜 구분 버튼 추가
+ * @author 정성현 목적 : 접속자 목록 보여주기
  *
  */
 
@@ -33,12 +33,11 @@ public class MyClientSocket extends JFrame {
 	// 프레임 구성을 위한 변수
 	private JPanel top;
 	private JPanel center;
-	private JPanel bottom;
 	private JTextField textBox;
 	private JButton send;
 	private String msg;
 	private JPanel msgBox;
-	private JScrollPane textBoxScroll;
+	private JScrollPane bottom;
 
 	// 프로토콜 구분 위한 변수
 	private JButton all;
@@ -51,10 +50,16 @@ public class MyClientSocket extends JFrame {
 	private BufferedReader reader;
 	private BufferedWriter writer;
 	private boolean isLogin = true;
-	private String userName;
+	private String myName;
 
 	// 아이디 입력 확인 변수
 	private boolean isId = false;
+
+	// 접속자 확인 위한 변수
+	private JPanel west;
+	private String userName;
+	private boolean isUser = false;
+	private JButton userList;
 
 	public MyClientSocket() {
 		initObject();
@@ -70,19 +75,20 @@ public class MyClientSocket extends JFrame {
 
 		top = new JPanel();
 		center = new JPanel();
-		bottom = new JPanel();
 		textBox = new JTextField(30);
 		send = new JButton("전송");
 		msgBox = new JPanel();
 		all = new JButton("ALL");
 		chat = new JButton("CHAT");
-		textBoxScroll = new JScrollPane(textBox);
+		bottom = new JScrollPane(textBox);
+		west = new JPanel();
+		userList = new JButton("UserList");
 
 	}
 
 	private void initSetting() {
 		setTitle("채팅프로그램");
-		setSize(400, 500);
+		setSize(600, 500);
 		setLocationRelativeTo(null);
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
@@ -93,8 +99,10 @@ public class MyClientSocket extends JFrame {
 		center.setBackground(Color.pink);
 		center.setLayout(new BoxLayout(center, BoxLayout.Y_AXIS));
 
-		textBoxScroll.setBackground(Color.orange);
-		textBoxScroll.setPreferredSize(new Dimension(400, 40));
+		bottom.setPreferredSize(new Dimension(400, 40));
+
+		west.setPreferredSize(new Dimension(100, 100));
+		west.setLayout(new BoxLayout(west, BoxLayout.Y_AXIS));
 
 	}
 
@@ -102,8 +110,10 @@ public class MyClientSocket extends JFrame {
 
 		add(top, BorderLayout.NORTH);
 		add(center, BorderLayout.CENTER);
-		add(textBoxScroll, BorderLayout.SOUTH);
+		add(bottom, BorderLayout.SOUTH);
+		add(west, BorderLayout.WEST);
 
+		top.add(userList);
 		top.add(all);
 		top.add(chat);
 		top.add(send);
@@ -152,13 +162,20 @@ public class MyClientSocket extends JFrame {
 				while (isLogin) {
 					String inputData = reader.readLine();
 //					System.out.println(inputData);
-					center.add(msgBox.add(new JLabel(inputData)));
-					center.revalidate();
-					center.repaint();
+					if (inputData.startsWith("USER:")) {
+						user(inputData);
+					} else {
+						center.add(msgBox.add(new JLabel(inputData)));
+						center.revalidate();
+						center.repaint();
+					}
 				}
 			} catch (Exception e) {
 				try {
-					System.out.println("연결해제됨 : " + e.getMessage());
+//					System.out.println("연결해제됨 : " + e.getMessage());
+					center.add(msgBox.add(new JLabel("연결 해제됨")));
+					center.revalidate();
+					center.repaint();
 					isLogin = false;
 					writer.close();
 					reader.close();
@@ -175,11 +192,11 @@ public class MyClientSocket extends JFrame {
 	private void writeAll() {
 		try {
 			if (!isId) {
-				userName = msg;
-				writer.write(userName + "\n");
+				myName = msg;
+				writer.write(myName + "\n");
 				writer.flush();
 				center.add(msgBox.add(new JLabel("ID가 전송되었습니다.")));
-				center.add(msgBox.add(new JLabel("ID : " + userName)));
+				center.add(msgBox.add(new JLabel("ID : " + myName)));
 				center.revalidate();
 				center.repaint();
 				isId = true;
@@ -199,11 +216,11 @@ public class MyClientSocket extends JFrame {
 	private void writeChat() {
 		try {
 			if (!isId) {
-				userName = msg;
-				writer.write(userName + "\n");
+				myName = msg;
+				writer.write(myName + "\n");
 				writer.flush();
 				center.add(msgBox.add(new JLabel("ID가 전송되었습니다.")));
-				center.add(msgBox.add(new JLabel("ID : " + userName)));
+				center.add(msgBox.add(new JLabel("ID : " + myName)));
 				center.revalidate();
 				center.repaint();
 				isId = true;
@@ -242,7 +259,7 @@ public class MyClientSocket extends JFrame {
 				if (e.getSource() == all) {
 					isAll = true;
 					isChat = false;
-
+					isUser = false;
 				}
 			}
 		});
@@ -255,6 +272,20 @@ public class MyClientSocket extends JFrame {
 					msg = textBox.getText();
 					isAll = false;
 					isChat = true;
+					isUser = false;
+				}
+			}
+		});
+
+		userList.addActionListener(new ActionListener() {
+
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				if (e.getSource() == userList) {
+					isAll = false;
+					isChat = false;
+					isUser = true;
+					protocol();
 				}
 			}
 		});
@@ -265,7 +296,22 @@ public class MyClientSocket extends JFrame {
 			writeAll();
 		} else if (isChat) {
 			writeChat();
+		} else if (isUser) {
+			try {
+				writer.write("USER:\n");
+				writer.flush();
+
+			} catch (Exception e) {
+				e.getMessage();
+			}
 		}
+	}
+
+	private void user(String inputData) {
+		String[] token = inputData.split(":");
+		west.add(new JLabel(token[1]));
+		west.revalidate();
+		west.repaint();
 	}
 
 	public static void main(String[] args) {
