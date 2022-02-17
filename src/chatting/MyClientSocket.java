@@ -26,7 +26,7 @@ import javax.swing.JTextField;
 
 /**
  * 
- * @author 정성현 목적 : 접속자 목록 출력하기
+ * @author 정성현 목적 : 접속자 버튼으로 귓속말하기
  *
  */
 
@@ -43,7 +43,6 @@ public class MyClientSocket extends JFrame {
 
 	// 프로토콜 구분 위한 변수
 	private JButton all;
-	private JButton chat;
 	private boolean isAll = true;
 	private boolean isChat = false;
 
@@ -59,10 +58,13 @@ public class MyClientSocket extends JFrame {
 
 	// 접속자 확인 위한 변수
 	private JPanel west;
-	private String userName;
+//	private String userName;
 	private boolean isUser = false;
 	private JButton userList;
-	private Set<String> users;
+	private Set<JButton> users;
+
+	// 귓속말 위한 변수
+	private String receiver;
 
 	public MyClientSocket() {
 		initObject();
@@ -83,7 +85,6 @@ public class MyClientSocket extends JFrame {
 		send = new JButton("전송");
 		msgBox = new JPanel();
 		all = new JButton("ALL");
-		chat = new JButton("CHAT");
 		bottom = new JScrollPane(textBox);
 		west = new JPanel();
 		userList = new JButton("UserList");
@@ -122,7 +123,6 @@ public class MyClientSocket extends JFrame {
 
 		top.add(userList);
 		top.add(all);
-		top.add(chat);
 		top.add(send);
 
 	}
@@ -224,22 +224,17 @@ public class MyClientSocket extends JFrame {
 	// 귓속말 메서드
 	private void writeChat() {
 		try {
-			if (!isId) {
-				myName = msg;
-				writer.write(myName + "\n");
-				writer.flush();
-				center.add(msgBox.add(new JLabel("ID가 전송되었습니다.")));
-				center.add(msgBox.add(new JLabel("ID : " + myName)));
-				center.revalidate();
-				center.repaint();
-				isId = true;
-			} else if (isId) {
+			if (isId) {
+				try {
+					writer.write("CHAT:" + receiver + ":" + msg + "\n");
+					writer.flush();
+					center.add(msgBox.add(new JLabel(receiver + "에게: " + msg)));
+					center.revalidate();
+					center.repaint();
 
-				writer.write("CHAT:" + msg + "\n");
-				writer.flush();
-				center.add(msgBox.add(new JLabel(msg.substring(5))));
-				center.revalidate();
-				center.repaint();
+				} catch (Exception e2) {
+					e2.printStackTrace();
+				}
 			}
 		} catch (Exception e) {
 			System.out.println("연결이 없습니다.");
@@ -270,20 +265,6 @@ public class MyClientSocket extends JFrame {
 				if (e.getSource() == all) {
 					isAll = true;
 					isChat = false;
-					isUser = false;
-				}
-			}
-		});
-
-		// 귓속말 버튼
-		chat.addActionListener(new ActionListener() {
-
-			@Override
-			public void actionPerformed(ActionEvent e) {
-				if (e.getSource() == chat) {
-					msg = textBox.getText();
-					isAll = false;
-					isChat = true;
 					isUser = false;
 				}
 			}
@@ -327,14 +308,29 @@ public class MyClientSocket extends JFrame {
 		west.removeAll();
 		String[] token = inputData.split(":");
 		for (int i = 1; i < token.length; i++) {
-			users.add(token[i]);
+			users.add(new JButton(token[i]));
 		}
 		west.add(new JLabel("접속자 수 : " + users.size() + "명"));
-		for (String s : users) {
-			west.add(new JButton(s));
+		for (JButton s : users) {
+			chat(s);
+			west.add(s);
 			west.revalidate();
 			west.repaint();
 		}
+	}
+
+	private void chat(JButton userName) {
+		userName.addActionListener(new ActionListener() {
+
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				if (e.getSource() == userName) {
+					isAll = false;
+					isChat = true;
+					receiver = userName.getText();
+				}
+			}
+		});
 	}
 
 	public static void main(String[] args) {
