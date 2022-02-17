@@ -13,6 +13,8 @@ import java.io.BufferedWriter;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.net.Socket;
+import java.util.HashSet;
+import java.util.Set;
 
 import javax.swing.BoxLayout;
 import javax.swing.JButton;
@@ -24,7 +26,7 @@ import javax.swing.JTextField;
 
 /**
  * 
- * @author 정성현 목적 : 접속자 목록 보여주기
+ * @author 정성현 목적 : 접속자 목록 출력하기
  *
  */
 
@@ -60,6 +62,7 @@ public class MyClientSocket extends JFrame {
 	private String userName;
 	private boolean isUser = false;
 	private JButton userList;
+	private Set<String> users;
 
 	public MyClientSocket() {
 		initObject();
@@ -71,6 +74,7 @@ public class MyClientSocket extends JFrame {
 		setVisible(true);
 	}
 
+	// 오브젝트 생성 메서드
 	private void initObject() {
 
 		top = new JPanel();
@@ -83,12 +87,14 @@ public class MyClientSocket extends JFrame {
 		bottom = new JScrollPane(textBox);
 		west = new JPanel();
 		userList = new JButton("UserList");
+		users = new HashSet<>();
 
 	}
 
+	// 설정 메서드
 	private void initSetting() {
 		setTitle("채팅프로그램");
-		setSize(600, 500);
+		setSize(400, 500);
 		setLocationRelativeTo(null);
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
@@ -106,6 +112,7 @@ public class MyClientSocket extends JFrame {
 
 	}
 
+	// 오브젝트 추가 메서드
 	private void addObject() {
 
 		add(top, BorderLayout.NORTH);
@@ -120,6 +127,7 @@ public class MyClientSocket extends JFrame {
 
 	}
 
+	// 키보드 입력 인식 리스너 -> Enter입력시 메세지 전송
 	private void initListener() {
 		textBox.addKeyListener(new KeyAdapter() {
 
@@ -136,6 +144,7 @@ public class MyClientSocket extends JFrame {
 
 	}
 
+	// 소켓 연결과 버퍼달기
 	private void connect() {
 		try {
 
@@ -161,7 +170,6 @@ public class MyClientSocket extends JFrame {
 				center.add(msgBox.add(new JLabel("아이디를 입력하세요.")));
 				while (isLogin) {
 					String inputData = reader.readLine();
-//					System.out.println(inputData);
 					if (inputData.startsWith("USER:")) {
 						user(inputData);
 					} else {
@@ -172,8 +180,7 @@ public class MyClientSocket extends JFrame {
 				}
 			} catch (Exception e) {
 				try {
-//					System.out.println("연결해제됨 : " + e.getMessage());
-					center.add(msgBox.add(new JLabel("연결 해제됨")));
+					center.add(msgBox.add(new JLabel("연결이 해제되었습니다")));
 					center.revalidate();
 					center.repaint();
 					isLogin = false;
@@ -189,6 +196,7 @@ public class MyClientSocket extends JFrame {
 
 	}
 
+	// 전체 채팅 메서드
 	private void writeAll() {
 		try {
 			if (!isId) {
@@ -213,6 +221,7 @@ public class MyClientSocket extends JFrame {
 		}
 	}
 
+	// 귓속말 메서드
 	private void writeChat() {
 		try {
 			if (!isId) {
@@ -240,6 +249,7 @@ public class MyClientSocket extends JFrame {
 	// 버튼 클릭시 이벤트 설정
 	private void btn() {
 
+		// 전송 버튼
 		send.addActionListener(new ActionListener() {
 
 			@Override
@@ -252,6 +262,7 @@ public class MyClientSocket extends JFrame {
 			}
 		});
 
+		// 전체 채팅 버튼
 		all.addActionListener(new ActionListener() {
 
 			@Override
@@ -264,6 +275,7 @@ public class MyClientSocket extends JFrame {
 			}
 		});
 
+		// 귓속말 버튼
 		chat.addActionListener(new ActionListener() {
 
 			@Override
@@ -277,6 +289,7 @@ public class MyClientSocket extends JFrame {
 			}
 		});
 
+		// 접속자 리스트 확인 버튼
 		userList.addActionListener(new ActionListener() {
 
 			@Override
@@ -291,6 +304,7 @@ public class MyClientSocket extends JFrame {
 		});
 	}
 
+	// 버튼을 통해 프로토콜 자동처리 해주는 메서드
 	private void protocol() {
 		if (isAll) {
 			writeAll();
@@ -307,11 +321,20 @@ public class MyClientSocket extends JFrame {
 		}
 	}
 
+	// 접속자 확인 메서드
 	private void user(String inputData) {
+		users.clear();
+		west.removeAll();
 		String[] token = inputData.split(":");
-		west.add(new JLabel(token[1]));
-		west.revalidate();
-		west.repaint();
+		for (int i = 1; i < token.length; i++) {
+			users.add(token[i]);
+		}
+		west.add(new JLabel("접속자 수 : " + users.size() + "명"));
+		for (String s : users) {
+			west.add(new JButton(s));
+			west.revalidate();
+			west.repaint();
+		}
 	}
 
 	public static void main(String[] args) {
