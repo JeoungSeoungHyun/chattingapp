@@ -20,31 +20,35 @@ import java.util.Set;
 import javax.swing.BoxLayout;
 import javax.swing.JButton;
 import javax.swing.JFrame;
-import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
 
 /**
  * 
- * @author 정성현 목적 : 채팅창 TextArea로 변경하고 스크롤 추가
+ * @author 정성현 목적 : 구성 변경
  *
  */
 
 public class MyClientSocket extends JFrame {
 
 	// 프레임 구성을 위한 변수
-	private JPanel top;
-	private JTextArea center;
-	private JTextField textBox;
-	private JButton send;
 	private String msg;
+	private JPanel top;
 	private JPanel msgBox;
-	private ScrollPane bottom;
+	private JPanel bottom;
+	private JTextArea center;
+	private JButton send;
+	private JButton connect;
+	private JTextField textBox;
+	private JTextField ip;
+	private JTextField port;
 	private ScrollPane scroll;
+	private JPanel test;
 
 	// 프로토콜 구분 위한 변수
 	private JButton all;
+	private JButton chat;
 	private boolean isAll = true;
 	private boolean isChat = false;
 
@@ -60,12 +64,14 @@ public class MyClientSocket extends JFrame {
 
 	// 접속자 확인 위한 변수
 	private JPanel west;
-	private boolean isUser = false;
 	private JButton userList;
-	private Set<JButton> users;
+	private Set<String> users;
+	private ScrollPane scroll2;
+	private JTextArea userBox;
 
 	// 귓속말 위한 변수
 	private String receiver;
+	private JTextField chatBox;
 
 	public MyClientSocket() {
 		initObject();
@@ -73,7 +79,6 @@ public class MyClientSocket extends JFrame {
 		addObject();
 		btn();
 		initListener();
-		connect();
 		setVisible(true);
 	}
 
@@ -85,13 +90,20 @@ public class MyClientSocket extends JFrame {
 		textBox = new JTextField(30);
 		send = new JButton("전송");
 		msgBox = new JPanel();
-		all = new JButton("ALL");
-		bottom = new ScrollPane();
+		all = new JButton("       ALL      ");
+		chat = new JButton("     CHAT     ");
+		bottom = new JPanel();
 		west = new JPanel();
-		userList = new JButton("UserList");
+		userList = new JButton("  UserList  ");
 		users = new HashSet<>();
 		scroll = new ScrollPane();
-
+		scroll2 = new ScrollPane();
+		userBox = new JTextArea();
+		ip = new JTextField(15);
+		port = new JTextField(10);
+		connect = new JButton("connect");
+		chatBox = new JTextField();
+		test = new JPanel();
 	}
 
 	// 설정 메서드
@@ -102,15 +114,29 @@ public class MyClientSocket extends JFrame {
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
 		top.setBackground(Color.yellow);
-		top.setLayout(new FlowLayout());
+		top.setLayout(new FlowLayout(FlowLayout.CENTER));
 		top.setPreferredSize(new Dimension(400, 40));
 
 		center.setBackground(Color.pink);
+		center.setEditable(false);
 
 		bottom.setPreferredSize(new Dimension(400, 40));
+		bottom.setBackground(Color.orange);
 
 		west.setPreferredSize(new Dimension(100, 100));
+		west.setBackground(Color.lightGray);
 		west.setLayout(new BoxLayout(west, BoxLayout.Y_AXIS));
+
+		userList.setAlignmentX(CENTER_ALIGNMENT);
+		all.setAlignmentX(CENTER_ALIGNMENT);
+		chat.setAlignmentX(CENTER_ALIGNMENT);
+
+		userBox.setEditable(false);
+
+		ip.setText("127.0.0.1");
+		port.setText("2000");
+
+		test.setLayout(new BorderLayout());
 
 	}
 
@@ -120,15 +146,27 @@ public class MyClientSocket extends JFrame {
 		add(top, BorderLayout.NORTH);
 		add(scroll, BorderLayout.CENTER);
 		add(bottom, BorderLayout.SOUTH);
-		add(west, BorderLayout.WEST);
+		add(test, BorderLayout.WEST);
 
-		top.add(userList);
-		top.add(all);
-		top.add(send);
+		test.add(west, BorderLayout.CENTER);
+		test.add(chatBox, BorderLayout.SOUTH);
+
+		top.add(ip);
+		top.add(port);
+		top.add(connect);
+
+		west.add(userList);
+		west.add(scroll2);
+		west.add(all);
+		west.add(chat);
+//		west.add(chatBoxPanel);
+//		chatBoxPanel.add(chatBox);
 
 		scroll.add(center);
+		scroll2.add(userBox);
 
 		bottom.add(textBox);
+		bottom.add(send);
 	}
 
 	// 키보드 입력 인식 리스너 -> Enter입력시 메세지 전송
@@ -153,7 +191,7 @@ public class MyClientSocket extends JFrame {
 		try {
 
 			// 소켓 연결
-			socket = new Socket("localhost", 2000);
+			socket = new Socket(ip.getText(), Integer.parseInt(port.getText()));
 
 			// 버퍼 달기
 			reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
@@ -210,7 +248,7 @@ public class MyClientSocket extends JFrame {
 
 				writer.write("ALL:" + msg + "\n");
 				writer.flush();
-				center.append(msg + "\n");
+				center.append("나 :" + msg + "\n");
 			}
 		} catch (Exception e) {
 			System.out.println("연결이 없습니다.");
@@ -238,6 +276,17 @@ public class MyClientSocket extends JFrame {
 	// 버튼 클릭시 이벤트 설정
 	private void btn() {
 
+		// 연결 버튼
+		connect.addActionListener(new ActionListener() {
+
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				if (e.getSource() == connect) {
+					connect();
+				}
+			}
+		});
+
 		// 전송 버튼
 		send.addActionListener(new ActionListener() {
 
@@ -259,7 +308,19 @@ public class MyClientSocket extends JFrame {
 				if (e.getSource() == all) {
 					isAll = true;
 					isChat = false;
-					isUser = false;
+				}
+			}
+		});
+
+		// 귓속말 버튼
+		chat.addActionListener(new ActionListener() {
+
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				if (e.getSource() == chat) {
+					isAll = false;
+					isChat = true;
+					receiver = chatBox.getText();
 				}
 			}
 		});
@@ -270,10 +331,12 @@ public class MyClientSocket extends JFrame {
 			@Override
 			public void actionPerformed(ActionEvent e) {
 				if (e.getSource() == userList) {
-					isAll = false;
-					isChat = false;
-					isUser = true;
-					protocol();
+					try {
+						writer.write("USER:\n");
+						writer.flush();
+					} catch (Exception e3) {
+						e3.getMessage();
+					}
 				}
 			}
 		});
@@ -285,46 +348,22 @@ public class MyClientSocket extends JFrame {
 			writeAll();
 		} else if (isChat) {
 			writeChat();
-		} else if (isUser) {
-			try {
-				writer.write("USER:\n");
-				writer.flush();
-
-			} catch (Exception e) {
-				e.getMessage();
-			}
 		}
+
 	}
 
 	// 접속자 확인 메서드
 	private void user(String inputData) {
 		users.clear();
-		west.removeAll();
+		userBox.setText("");
 		String[] token = inputData.split(":");
 		for (int i = 1; i < token.length; i++) {
-			users.add(new JButton(token[i]));
+			users.add(token[i]);
 		}
-		west.add(new JLabel("접속자 수 : " + users.size() + "명"));
-		for (JButton s : users) {
-			chat(s);
-			west.add(s);
-			west.revalidate();
-			west.repaint();
+		userBox.append("접속자 수 : " + users.size() + "명\n");
+		for (String s : users) {
+			userBox.append(s + "\n");
 		}
-	}
-
-	private void chat(JButton userName) {
-		userName.addActionListener(new ActionListener() {
-
-			@Override
-			public void actionPerformed(ActionEvent e) {
-				if (e.getSource() == userName) {
-					isAll = false;
-					isChat = true;
-					receiver = userName.getText();
-				}
-			}
-		});
 	}
 
 	public static void main(String[] args) {
