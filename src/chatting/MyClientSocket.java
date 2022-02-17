@@ -4,6 +4,7 @@ import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
+import java.awt.ScrollPane;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyAdapter;
@@ -21,12 +22,12 @@ import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
-import javax.swing.JScrollPane;
+import javax.swing.JTextArea;
 import javax.swing.JTextField;
 
 /**
  * 
- * @author 정성현 목적 : 접속자 버튼으로 귓속말하기
+ * @author 정성현 목적 : 채팅창 TextArea로 변경하고 스크롤 추가
  *
  */
 
@@ -34,12 +35,13 @@ public class MyClientSocket extends JFrame {
 
 	// 프레임 구성을 위한 변수
 	private JPanel top;
-	private JPanel center;
+	private JTextArea center;
 	private JTextField textBox;
 	private JButton send;
 	private String msg;
 	private JPanel msgBox;
-	private JScrollPane bottom;
+	private ScrollPane bottom;
+	private ScrollPane scroll;
 
 	// 프로토콜 구분 위한 변수
 	private JButton all;
@@ -58,7 +60,6 @@ public class MyClientSocket extends JFrame {
 
 	// 접속자 확인 위한 변수
 	private JPanel west;
-//	private String userName;
 	private boolean isUser = false;
 	private JButton userList;
 	private Set<JButton> users;
@@ -80,15 +81,16 @@ public class MyClientSocket extends JFrame {
 	private void initObject() {
 
 		top = new JPanel();
-		center = new JPanel();
+		center = new JTextArea();
 		textBox = new JTextField(30);
 		send = new JButton("전송");
 		msgBox = new JPanel();
 		all = new JButton("ALL");
-		bottom = new JScrollPane(textBox);
+		bottom = new ScrollPane();
 		west = new JPanel();
 		userList = new JButton("UserList");
 		users = new HashSet<>();
+		scroll = new ScrollPane();
 
 	}
 
@@ -104,7 +106,6 @@ public class MyClientSocket extends JFrame {
 		top.setPreferredSize(new Dimension(400, 40));
 
 		center.setBackground(Color.pink);
-		center.setLayout(new BoxLayout(center, BoxLayout.Y_AXIS));
 
 		bottom.setPreferredSize(new Dimension(400, 40));
 
@@ -117,7 +118,7 @@ public class MyClientSocket extends JFrame {
 	private void addObject() {
 
 		add(top, BorderLayout.NORTH);
-		add(center, BorderLayout.CENTER);
+		add(scroll, BorderLayout.CENTER);
 		add(bottom, BorderLayout.SOUTH);
 		add(west, BorderLayout.WEST);
 
@@ -125,6 +126,9 @@ public class MyClientSocket extends JFrame {
 		top.add(all);
 		top.add(send);
 
+		scroll.add(center);
+
+		bottom.add(textBox);
 	}
 
 	// 키보드 입력 인식 리스너 -> Enter입력시 메세지 전송
@@ -167,22 +171,18 @@ public class MyClientSocket extends JFrame {
 		// 읽기 위한 새로운 스레드 생성
 		new Thread(() -> {
 			try {
-				center.add(msgBox.add(new JLabel("아이디를 입력하세요.")));
+				center.append("아이디를 입력하세요.\n");
 				while (isLogin) {
 					String inputData = reader.readLine();
 					if (inputData.startsWith("USER:")) {
 						user(inputData);
 					} else {
-						center.add(msgBox.add(new JLabel(inputData)));
-						center.revalidate();
-						center.repaint();
+						center.append(inputData + "\n");
 					}
 				}
 			} catch (Exception e) {
 				try {
-					center.add(msgBox.add(new JLabel("연결이 해제되었습니다")));
-					center.revalidate();
-					center.repaint();
+					center.append("연결이 해제되었습니다\n");
 					isLogin = false;
 					writer.close();
 					reader.close();
@@ -203,18 +203,14 @@ public class MyClientSocket extends JFrame {
 				myName = msg;
 				writer.write(myName + "\n");
 				writer.flush();
-				center.add(msgBox.add(new JLabel("ID가 전송되었습니다.")));
-				center.add(msgBox.add(new JLabel("ID : " + myName)));
-				center.revalidate();
-				center.repaint();
+				center.append("ID가 전송되었습니다.\n");
+				center.append("ID : " + myName + "\n");
 				isId = true;
 			} else if (isId) {
 
 				writer.write("ALL:" + msg + "\n");
 				writer.flush();
-				center.add(msgBox.add(new JLabel(msg)));
-				center.revalidate();
-				center.repaint();
+				center.append(msg + "\n");
 			}
 		} catch (Exception e) {
 			System.out.println("연결이 없습니다.");
@@ -228,9 +224,7 @@ public class MyClientSocket extends JFrame {
 				try {
 					writer.write("CHAT:" + receiver + ":" + msg + "\n");
 					writer.flush();
-					center.add(msgBox.add(new JLabel(receiver + "에게: " + msg)));
-					center.revalidate();
-					center.repaint();
+					center.append(receiver + "에게: " + msg + "\n");
 
 				} catch (Exception e2) {
 					e2.printStackTrace();
