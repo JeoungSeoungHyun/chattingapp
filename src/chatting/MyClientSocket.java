@@ -138,6 +138,8 @@ public class MyClientSocket extends JFrame {
 
 		test.setLayout(new BorderLayout());
 
+		all.setPreferredSize(new Dimension(40, 30));
+
 	}
 
 	// 오브젝트 추가 메서드
@@ -177,9 +179,9 @@ public class MyClientSocket extends JFrame {
 			public void keyPressed(KeyEvent e) {
 				if (e.getKeyCode() == KeyEvent.VK_ENTER) {
 					msg = textBox.getText();
+					msg = msg + "";
 					textBox.setText("");
 					protocol();
-
 				}
 			}
 		});
@@ -248,7 +250,7 @@ public class MyClientSocket extends JFrame {
 
 				writer.write("ALL:" + msg + "\n");
 				writer.flush();
-				center.append("나 :" + msg + "\n");
+				center.append(myName + ": " + msg + "\n");
 			}
 		} catch (Exception e) {
 			System.out.println("연결이 없습니다.");
