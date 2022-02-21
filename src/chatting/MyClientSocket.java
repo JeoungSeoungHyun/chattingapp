@@ -161,8 +161,6 @@ public class MyClientSocket extends JFrame {
 		west.add(scroll2);
 		west.add(all);
 		west.add(chat);
-//		west.add(chatBoxPanel);
-//		chatBoxPanel.add(chatBox);
 
 		scroll.add(center);
 		scroll2.add(userBox);
@@ -179,9 +177,13 @@ public class MyClientSocket extends JFrame {
 			public void keyPressed(KeyEvent e) {
 				if (e.getKeyCode() == KeyEvent.VK_ENTER) {
 					msg = textBox.getText();
-					msg = msg + "";
-					textBox.setText("");
-					protocol();
+					if (msg.equals("")) {
+						center.append("메세지를 입력하세요\n");
+					} else {
+						msg = msg + "";
+						textBox.setText("");
+						protocol();
+					}
 				}
 			}
 		});
@@ -285,6 +287,7 @@ public class MyClientSocket extends JFrame {
 			public void actionPerformed(ActionEvent e) {
 				if (e.getSource() == connect) {
 					connect();
+					connect.setEnabled(false);
 				}
 			}
 		});

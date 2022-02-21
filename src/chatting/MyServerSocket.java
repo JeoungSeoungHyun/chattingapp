@@ -28,7 +28,7 @@ public class MyServerSocket {
 	public MyServerSocket() {
 		try {
 			// 2000번 포트로 서버소켓 생성
-			serverSocket = new ServerSocket(2000);
+			serverSocket = new ServerSocket(2001);
 
 			// 리스트에 동시접근 불가능한 동기화가 처리된 ArrayList인 Vector사용
 			고객리스트 = new Vector<>();
